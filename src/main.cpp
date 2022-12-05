@@ -23,6 +23,6 @@ int main() {
   	  res->SendFile("www/css/index.css");
   	});
 
-	std::cout << "Starting server!" << std::endl;
+	std::cout << "gitserv started on port 3000." << std::endl;
   	http.Start();
 }
