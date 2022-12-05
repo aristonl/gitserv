@@ -23,6 +23,11 @@ int main() {
   	  res->SendFile("www/css/index.css");
   	});
 
+	http.Get("/css/fonts.css", [](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "text/css; charset=UTF-8");
+		res->SendFile("www/css/fonts.css");
+	});
+
 	// repository page
 	http.Get("/aristonl/gitserv", [](Request* req, Response* res) {
 		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
@@ -33,6 +38,18 @@ int main() {
 	http.Get("/assets/img/n11-sm-white.svg", [](Request* req, Response* res) {
 		res->SetHeader("Content-Type", "image/svg+xml");
 		res->SendFile("www/assets/img/n11_sm_white.svg");
+	});
+
+	http.Get("/assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf", 
+			[](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "font/ttf");
+		res->SendFile("www/assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf");
+	});
+
+	http.Get("/assets/fonts/JetBrainsMono-VariableFont_wght.ttf", 
+			[](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "font/ttf");
+		res->SendFile("www/assets/fonts/JetBrainsMono-VariableFont_wght.ttf");
 	});
 
 	std::cout << "gitserv started on port 3000." << std::endl;
