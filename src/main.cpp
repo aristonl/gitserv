@@ -6,8 +6,8 @@ int main() {
 
   	// 404 Page
   	http.Error(404, [](Request* req, Response* res) {
-    	res->SetHTTP("HTTP/1.1 404 Not Found\r\n\r\n404 Not Found");
-  	});
+  		res->SetHTTP("HTTP/1.1 404 Not Found\r\n\r\n404 Not Found");
+	});
   	http.Default([](Request* req, Response* res) {
     	res->Error(404);
   	});
@@ -17,6 +17,16 @@ int main() {
     	res->SetHeader("Content-Type", "text/html; charset=UTF-8");
     	res->SendFile("www/index.html");
   	});
+
+	http.Get("/repos", [](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
+		res->SendFile("www/repolist.html");
+	});
+
+	http.Get("/mailinglists", [](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
+		res->SendFile("www/mailinglists.html");
+	});
 
   	http.Get("/css/index.css", [](Request* req, Response* res) {
    	 res->SetHeader("Content-Type", "text/css; charset=UTF-8");
