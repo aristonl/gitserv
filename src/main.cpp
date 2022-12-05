@@ -18,10 +18,22 @@ int main() {
     	res->SendFile("www/index.html");
   	});
 
-  	http.Get("/css/style.css", [](Request* req, Response* res) {
+  	http.Get("/css/index.css", [](Request* req, Response* res) {
    	 res->SetHeader("Content-Type", "text/css; charset=UTF-8");
   	  res->SendFile("www/css/index.css");
   	});
+
+	// repository page
+	http.Get("/aristonl/gitserv", [](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
+		res->SendFile("www/repository.html");
+	});
+
+	// assets
+	http.Get("/assets/img/n11-sm-white.svg", [](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "image/svg+xml");
+		res->SendFile("www/assets/img/n11_sm_white.svg");
+	});
 
 	std::cout << "gitserv started on port 3000." << std::endl;
   	http.Start();
