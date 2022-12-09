@@ -1,10 +1,8 @@
 		
-		GITSERV - git server hosting
+		GITSERV - git front-end solution
 
-"gitserv" is a git server hosting program which includes
-a git daemon (for git:// connections), a web GUI built with
-Link, and a modified version of soft serve, a ssh GUI for git.
-
-It will support and configure git, ssh, and http/https connections.
+"gitserv" is a git server hosting program which includes a web
+GUI built with Link and a modified version of soft serve, a 
+ssh GUI for git.
 
 Copyright (c) 2022 aristonl.
