@@ -1,8 +1,29 @@
 		
+<<<<<<< HEAD
 		GITSERV - git front-end solution
 
 "gitserv" is a git server hosting program which includes a web
 GUI built with Link and a modified version of soft serve, a 
 ssh GUI for git.
+=======
+				GITSERV - git server hosting
+
+"gitserv" is a git server hosting program which includes a git daemon 
+(for git:// connections), a web GUI built with Link, and a modified 
+version of soft serve, a ssh GUI for git.
+
+It will support and configure git, ssh, and http/https connections.
+>>>>>>> 47f40b42633495e320c226f939b6cf39b4149fbc
+
+SOFTWARE REQUIREMENTS
+
+	Since this is a git-based program, you need git to be installed. 
+	For compiling, install cmake, gcc, ninja, and go. The web front
+	end uses Link, an http library in C++ built by N11.
+
+COMPILING AND RUNNING GITSERV
+
+	Run "cmake -GNinja ." in the project root. You may also use make
+	as your build system but it isn't recommended and not tested. Then run "ninja"; it will build an executable named "gitserv" to which you can run with "./gitserv".
 
 Copyright (c) 2022 aristonl.
