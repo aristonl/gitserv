@@ -1,7 +1,10 @@
 #include <link>
 #include <iostream>
+#include <gitserv.h>
 
 int main() {
+	init();
+
 	Link http(3000);
 
   	// 404 Page
