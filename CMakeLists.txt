@@ -12,4 +12,4 @@ add_executable(gitserv ${cpp_src})
 set(CMAKE_CXX_FLAGS "-fpic -pthread")
 add_link_options(-pthread)
 
-target_link_libraries(gitserv link)
+target_link_libraries(gitserv link git2)
