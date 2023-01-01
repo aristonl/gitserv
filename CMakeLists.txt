@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(gitserv C CXX)
 
+add_subdirectory(libgit2)
+
 set(cpp_src src/main.cpp
 			src/init.cpp
 			src/git/git.cpp)
