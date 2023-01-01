@@ -19,7 +19,8 @@ gitserv uses cmake to build. To build, run the following commands:
     $ ninja
 ```
 
-Copyright (c) 2023 aristonl. gitserv is licensed under BSD 3; see LICENSE.
+## License
+gitserv is licensed under BSD 3; see LICENSE.
 git and libgit2 are licensed under GPLv2; see COPYING. git and libgit2
 use certain sources that are either not BSD 3 Clause or GPLv2. See their
 respective COPYING files for more info.
