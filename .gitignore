@@ -14,5 +14,8 @@ cmake_install.cmake
 .idea/
 Testing/
 
+# Build folder
+build/
+
 # gitserv binary
 gitserv
