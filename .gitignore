@@ -5,9 +5,14 @@ rules.ninja
 .ninja_log
 
 # CMake
+.cmake/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+
+# JetBrains
+.idea/
+Testing/
 
 # gitserv binary
 gitserv
