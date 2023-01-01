@@ -14,6 +14,11 @@ SOFTWARE REQUIREMENTS
 COMPILING AND RUNNING GITSERV
 
 	Run "cmake -GNinja ." in the project root. You may also use make
-	as your build system but it isn't recommended and not tested. Then run "ninja"; it will build an executable named "gitserv" to which you can run with "./gitserv".
+	as your build system but it isn't recommended and not tested. Then 
+	run "ninja"; it will build an executable named "gitserv" to which 
+	you can run with "./gitserv".
 
-Copyright (c) 2022 aristonl.
+Copyright (c) 2022 aristonl. gitserv is licensed under BSD 3; see LICENSE.
+git and libgit2 are licensed under GPLv2; see COPYING. git and libgit2
+use certain sources that are either not BSD 3 Clause or GPLv2. See their
+respective COPYING files for more info.
