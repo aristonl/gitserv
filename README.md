@@ -18,12 +18,12 @@ end uses Link, an http library in C++ built by N11.
 
 ## Building gitserv
 gitserv uses cmake to build. To build, run the following commands:
-```
+
     $ mkdir build
     $ cd build
     $ cmake --GNinja ..
     $ ninja
-```
+
 
 ## License
 gitserv is licensed under BSD 3; see LICENSE.
