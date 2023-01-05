@@ -7,7 +7,7 @@
 ## Software Requirements
 Since this is a git-based program, you need git to be installed. 
 For compiling, install cmake, gcc, ninja, and go. The web front
-end uses Link, an http library in C++ built by N11. 
+end uses Link, a web server library in C++ built by N11. 
 >   ------------------------------------------------------------------------------
 > 
 >   **NOTE**: *Link cannot be built on case-insensitive file systems, such as a
