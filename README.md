@@ -24,7 +24,12 @@ gitserv uses cmake to build. To build, run the following commands:
     $ cmake --GNinja ..
     $ ninja
 
-
+>	------------------------------------------------------------------------------
+>
+>	**NOTE**: *It is possible to build this using Make rather than Ninja, but this
+>	is untested for both Link and gitserv.*
+>
+>	------------------------------------------------------------------------------
 ## License
 gitserv is licensed under BSD 3; see LICENSE.
 git and libgit2 are licensed under GPLv2; see COPYING. git and libgit2
