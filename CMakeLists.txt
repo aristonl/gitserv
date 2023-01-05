@@ -1,9 +1,28 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.5.1)
 
 project(gitserv C CXX)
 
+# ---- Add cmake directory ----
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+
+# ---- Modules ----
+include(findLink)
+include(FeatureSummary)
+
+# ---- Build options ----
+if (LINK_FOUND)
+	option(GITSERV_WEB "Build gitserv's web frontend using Link" ON)
+	add_subdirectory(link)
+	add_definitions(-DGITSERV_WEB)
+	add_feature_info(GITSERV_WEB GITSERV_WEB "Build gitserv's web frontend using Link")
+else()
+	message(WARNING "Link not found, disabling web frontend")
+	option(GITSERV_WEB "Build gitserv's web frontend using Link" OFF)
+endif()
+
+feature_summary(WHAT ALL)
+
 add_subdirectory(libgit2)
-add_subdirectory(link)
 
 set(cpp_src src/main.cpp
 			src/init.cpp

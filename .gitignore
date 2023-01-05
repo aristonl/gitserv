@@ -19,3 +19,5 @@ build/
 
 # gitserv binary
 gitserv
+
+.DS_Store
