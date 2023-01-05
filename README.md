@@ -7,17 +7,23 @@
 ## Software Requirements
 Since this is a git-based program, you need git to be installed. 
 For compiling, install cmake, gcc, ninja, and go. The web front
-end uses Link, an http library in C++ built by N11. As of 1/1/2023,
-gitserv can only build on Linux.
+end uses Link, an http library in C++ built by N11. 
+>   ------------------------------------------------------------------------------
+> 
+>   **NOTE**: *Link cannot be built on case-insensitive file systems, such as a
+>   default macOS installation. You will need to use a case-sensitive file
+>   system, not use the web front end, or modify the files in gitserv and Link.*
+> 
+>   ------------------------------------------------------------------------------
 
 ## Building gitserv
 gitserv uses cmake to build. To build, run the following commands:
-```
+
     $ mkdir build
     $ cd build
     $ cmake --GNinja ..
     $ ninja
-```
+
 
 ## License
 gitserv is licensed under BSD 3; see LICENSE.

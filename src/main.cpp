@@ -1,9 +1,18 @@
-#include <link.hpp>
+#include <link>
 #include <iostream>
 #include <gitserv.h>
 
-int main() {
-	init();
+#include <cstring>
+
+int main(int argc, char* argv[]) {
+	//init();
+
+    // If the argument is setup, run setup()
+    if (argc > 1) {
+        if (strcmp(argv[1], "setup") == 0) {
+            setup();
+        }
+    }
 
 	Link http(3000);
 
