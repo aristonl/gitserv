@@ -1,0 +1,22 @@
+Contributing to gitserv
+* Temporary Document *
+
+    To start contributing to gitserv, there are two ways you can go about this:
+        - Fork the repository and submit a pull request via GitHub
+        - Clone the repository and submit a patch via email (preferred)
+
+    Patchwork via email submission is preferred because it allows me to easily
+    review, apply, and test the patch before merging it into the repository.
+
+    If you choose to submit a pull request, be sure to follow these guidelines:
+        - The pull request is scoped to a single feature or bug fix
+        - Include a test case for the feature or bug fix
+        - Keep the code well documented
+        - Attempt to not do many "typo" commits
+
+Security Issues
+
+    If you discover a security vulnerability within gitserv, please send an
+    e-mail to me at: 4tl0renz0@gmail.com All security vulnerabilities will be
+    promptly addressed. All security-related patches should be submitted via
+    email.
