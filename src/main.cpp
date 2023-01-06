@@ -3,15 +3,24 @@
 #include <gitserv.h>
 
 #include <cstring>
+#include <unistd.h>
 
 int main(int argc, char* argv[]) {
 	//init();
 
-    // If the argument is setup, run setup()
-    if (argc > 1) {
-        if (strcmp(argv[1], "setup") == 0) {
-            setup();
+    int opt;
+    char* publicKeyPath = NULL;
+
+    if (strcmp(argv[1], "setup") == 0) {
+        while ((opt = getopt(argc, argv, "k:")) != -1) {
+            switch (opt) {
+                case 'k':
+                    publicKeyPath = optarg;
+                    break;
+            }
         }
+        printf("Public key path: %s\n", publicKeyPath);
+        setup(publicKeyPath);
     }
 
 	Link http(3000);

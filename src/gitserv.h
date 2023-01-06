@@ -1,4 +1,6 @@
 #pragma once
 
 int init();
-int setup();
+
+int authorizePubKey(char* publicKeyPath);
+int setup(char* publicKeyPath);
