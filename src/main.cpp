@@ -1,34 +1,33 @@
-#include <link>
-#include <iostream>
 #include <gitserv.h>
+#include <iostream>
+#include <link>
 
 #include <cstring>
 
-int main(int argc, char* argv[]) {
-	//init();
+int main(int argc, char* argv[])
+{
+	// init();
 
-    // If the argument is setup, run setup()
-    if (argc > 1) {
-        if (strcmp(argv[1], "setup") == 0) {
-            setup();
-        }
-    }
+	// If the argument is setup, run setup()
+	if (argc > 1) {
+		if (strcmp(argv[1], "setup") == 0) {
+			setup();
+		}
+	}
 
 	Link http(3000);
 
-  	// 404 Page
-  	http.Error(404, [](Request* req, Response* res) {
-  		res->SetHTTP("HTTP/1.1 404 Not Found\r\n\r\n404 Not Found");
+	// 404 Page
+	http.Error(404, [](Request* req, Response* res) {
+		res->SetHTTP("HTTP/1.1 404 Not Found\r\n\r\n404 Not Found");
 	});
-  	http.Default([](Request* req, Response* res) {
-    	res->Error(404);
-  	});
-  
-  	// Landing Page
-  	http.Get("/", [](Request* req, Response* res) {
-    	res->SetHeader("Content-Type", "text/html; charset=UTF-8");
-    	res->SendFile("www/index.html");
-  	});
+	http.Default([](Request* req, Response* res) { res->Error(404); });
+
+	// Landing Page
+	http.Get("/", [](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
+		res->SendFile("www/index.html");
+	});
 
 	http.Get("/repos", [](Request* req, Response* res) {
 		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
@@ -40,10 +39,10 @@ int main(int argc, char* argv[]) {
 		res->SendFile("www/mailinglists.html");
 	});
 
-  	http.Get("/css/index.css", [](Request* req, Response* res) {
-   	 res->SetHeader("Content-Type", "text/css; charset=UTF-8");
-  	  res->SendFile("www/css/index.css");
-  	});
+	http.Get("/css/index.css", [](Request* req, Response* res) {
+		res->SetHeader("Content-Type", "text/css; charset=UTF-8");
+		res->SendFile("www/css/index.css");
+	});
 
 	http.Get("/css/fonts.css", [](Request* req, Response* res) {
 		res->SetHeader("Content-Type", "text/css; charset=UTF-8");
@@ -62,18 +61,20 @@ int main(int argc, char* argv[]) {
 		res->SendFile("www/assets/img/n11_sm_white.svg");
 	});
 
-	http.Get("/assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf", 
-			[](Request* req, Response* res) {
-		res->SetHeader("Content-Type", "font/ttf");
-		res->SendFile("www/assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf");
-	});
+	http.Get("/assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf",
+		[](Request* req, Response* res) {
+			res->SetHeader("Content-Type", "font/ttf");
+			res->SendFile(
+				"www/assets/fonts/JetBrainsMono-Italic-VariableFont_wght.ttf");
+		});
 
-	http.Get("/assets/fonts/JetBrainsMono-VariableFont_wght.ttf", 
-			[](Request* req, Response* res) {
-		res->SetHeader("Content-Type", "font/ttf");
-		res->SendFile("www/assets/fonts/JetBrainsMono-VariableFont_wght.ttf");
-	});
+	http.Get("/assets/fonts/JetBrainsMono-VariableFont_wght.ttf",
+		[](Request* req, Response* res) {
+			res->SetHeader("Content-Type", "font/ttf");
+			res->SendFile(
+				"www/assets/fonts/JetBrainsMono-VariableFont_wght.ttf");
+		});
 
 	std::cout << "gitserv started on port 3000." << std::endl;
-  	http.Start();
+	http.Start();
 }
