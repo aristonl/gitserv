@@ -7,11 +7,13 @@
 
 int main(int argc, char* argv[])
 {
-	init();
+    // FIXME: init() is causing the web server to give 404's
+	//init();
 
-    int opt;
-    char* publicKeyPath = NULL;
+    //int opt;
+    //char* publicKeyPath = NULL;
 
+    // FIXME: the code commented out below causes a seg fault
     /*
     if (strcmp(argv[1], "setup") == 0) {
         while ((opt = getopt(argc, argv, "k:")) != -1) {
@@ -31,6 +33,7 @@ int main(int argc, char* argv[])
 	// 404 Page
 	http.Error(404, [](Request* req, Response* res) {
 		res->SetHTTP("HTTP/1.1 404 Not Found\r\n\r\n404 Not Found");
+        printf("404 Not Found");
 	});
 	http.Default([](Request* req, Response* res) { res->Error(404); });
 
@@ -38,11 +41,13 @@ int main(int argc, char* argv[])
 	http.Get("/", [](Request* req, Response* res) {
 		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
 		res->SendFile("www/index.html");
+        printf("Landing page");
 	});
 
 	http.Get("/repos", [](Request* req, Response* res) {
 		res->SetHeader("Content-Type", "text/html; charset=UTF-8");
 		res->SendFile("www/repolist.html");
+        printf("Repo list page");
 	});
 
 	http.Get("/mailinglists", [](Request* req, Response* res) {
