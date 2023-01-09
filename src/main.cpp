@@ -7,11 +7,12 @@
 
 int main(int argc, char* argv[])
 {
-	// init();
+	init();
 
     int opt;
     char* publicKeyPath = NULL;
 
+    /*
     if (strcmp(argv[1], "setup") == 0) {
         while ((opt = getopt(argc, argv, "k:")) != -1) {
             switch (opt) {
@@ -23,6 +24,7 @@ int main(int argc, char* argv[])
         printf("Public key path: %s\n", publicKeyPath);
         setup(publicKeyPath);
     }
+     */
 
 	Link http(3000);
 
