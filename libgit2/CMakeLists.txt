@@ -119,11 +119,6 @@ include(ExperimentalFeatures)
 
 add_subdirectory(src)
 
-if(BUILD_TESTS)
-	enable_testing()
-	add_subdirectory(tests)
-endif()
-
 if(BUILD_EXAMPLES)
 	add_subdirectory(examples)
 endif()
