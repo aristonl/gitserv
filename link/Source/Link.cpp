@@ -1,279 +1,147 @@
-/* 
- *  ______________________________________
- * |  _   _  _  _                         |
- * | | \ | |/ |/ |     Date: 06/23/2022   |
- * | |  \| |- |- |     Author: Levi Hicks |
- * | |     || || |                        |
- * | | |\  || || |                        |
- * | |_| \_||_||_|     File: Link.cpp     |
- * |                                      |
- * |                                      |
- * | Please do not remove this header.    |
- * |______________________________________|
- */
-
-#include "../Includes/Link/Link.hpp"
+#include <Link.hpp>
 #include <iostream>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <filesystem>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <map>
-#include <stdexcept>
-#include <iomanip>
-#include <cstring>
-#include <chrono>
-#include <vector>
-#include "../Includes/Link/HTTPTools.hpp"
 
-/*
- * Holds data for the request.
- */
-class ThreadInfo {
-  public:
-    std::function<void(Request*, Response*)> func;
-    Request* request;
-    std::map<int, std::function<void(Request*, Response*)>> errorHandlers;
-};
-
-/*
- * Creates a new thread.
- * We have to use this because pthread_create will not hold the function and the Request.
- * 
- * @param info The information to pass to the thread.
- */
-void* threadWrapper(void* arg) {
-  ThreadInfo* info = (ThreadInfo*)arg;
-  Response response(info->request, &info->errorHandlers);
-  info->func(info->request, &response);
-  if (!response.IsCancelled()) {
-    int packet = 0;
-    while (packet < response.GetHTTP().size()) {
-      int packetLength = response.GetHTTP().size()<packet+1024? response.GetHTTP().size()-packet: 1024;
-      std::string PacketData = response.GetHTTP().substr(packet, packetLength);
-      int sent = send(info->request->GetSocket(), PacketData.c_str(), PacketData.size(), 0);
-      if (sent < 0) return NULL;
-      packet+=packetLength;
+std::string Link::Status(int status) {
+    switch (status) {
+        case 200: return "OK";
+        case 201: return "Created";
+        case 202: return "Accepted";
+        case 203: return "Non-Authoritative Information";
+        case 204: return "No Content";
+        case 205: return "Reset Content";
+        case 206: return "Partial Content";
+        case 300: return "Multiple Choices";
+        case 301: return "Moved Permanently";
+        case 302: return "Found";
+        case 303: return "See Other";
+        case 304: return "Not Modified";
+        case 305: return "Use Proxy";
+        case 307: return "Temporary Redirect";
+        case 400: return "Bad Request";
+        case 401: return "Unauthorized";
+        case 402: return "Payment Required";
+        case 403: return "Forbidden";
+        case 404: return "Not Found";
+        case 405: return "Method Not Allowed";
+        case 406: return "Not Acceptable";
+        case 407: return "Proxy Authentication Required";
+        case 408: return "Request Timeout";
+        case 409: return "Conflict";
+        case 410: return "Gone";
+        case 411: return "Length Required";
+        case 412: return "Precondition Failed";
+        case 413: return "Request Entity Too Large";
+        case 414: return "Request-URI Too Long";
+        case 415: return "Unsupported Media Type";
+        case 416: return "Requested Range Not Satisfiable";
+        case 417: return "Expectation Failed";
+        case 500: return "Internal Server Error";
+        case 501: return "Not Implemented";
+        case 502: return "Bad Gateway";
+        case 503: return "Service Unavailable";
+        case 504: return "Gateway Timeout";
+        case 505: return "HTTP Version Not Supported";
+        default: return "Unknown";
     }
-    close(info->request->GetSocket());
-  } else {
-    close(info->request->GetSocket());
-  }
-  return NULL;
 }
 
-/*
- * Creates a Link server
- *
- * @param port The port that the server will run on.
- */
-Link::Link(int port) { this->port = port; }
-
-/*
- * Set handler for a get request.
- *
- * @param path The specific path for the handler.
- * @param callback The function to call when a get request is made.
- */
-void Link::Get(std::string path, std::function<void(Request*, Response*)> callback) {
-  this->handlers[path+"GET"] = callback;
+std::string Link::GetMIMEType(std::string path) {
+    // get the extension
+    std::string extension = path.substr(path.find_last_of(".") + 1);
+    // convert to lowercase
+    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    // return the MIME type
+    if (extension == "html" || extension == "htm") return "text/html";
+    if (extension == "css") return "text/css";
+    if (extension == "js") return "application/javascript";
+    if (extension == "json") return "application/json";
+    if (extension == "xml") return "application/xml";
+    if (extension == "png") return "image/png";
+    if (extension == "jpg" || extension == "jpeg") return "image/jpeg";
+    if (extension == "gif") return "image/gif";
+    if (extension == "svg") return "image/svg+xml";
+    if (extension == "ico") return "image/x-icon";
+    if (extension == "ttf") return "font/ttf";
+    if (extension == "otf") return "font/otf";
+    if (extension == "woff") return "font/woff";
+    if (extension == "woff2") return "font/woff2";
+    if (extension == "eot") return "font/eot";
+    if (extension == "mp3") return "audio/mpeg";
+    if (extension == "wav") return "audio/wav";
+    if (extension == "ogg") return "audio/ogg";
+    if (extension == "mp4") return "video/mp4";
+    if (extension == "webm") return "video/webm";
+    if (extension == "ogv") return "video/ogg";
+    if (extension == "pdf") return "application/pdf";
+    if (extension == "zip") return "application/zip";
+    if (extension == "rar") return "application/x-rar-compressed";
+    if (extension == "7z") return "application/x-7z-compressed";
+    if (extension == "doc") return "application/msword";
+    if (extension == "docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if (extension == "xls") return "application/vnd.ms-excel";
+    if (extension == "xlsx") return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    if (extension == "ppt") return "application/vnd.ms-powerpoint";
+    if (extension == "pptx") return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    if (extension == "exe") return "application/x-msdownload";
+    if (extension == "apk") return "application/vnd.android.package-archive";
+    if (extension == "ipa") return "application/octet-stream";
+    if (extension == "deb") return "application/x-debian-package";
+    if (extension == "rpm") return "application/x-redhat-package-manager";
+    if (extension == "tar") return "application/x-tar";
+    if (extension == "gz") return "application/gzip";
+    if (extension == "bz2") return "application/x-bzip2";
+    if (extension == "xz") return "application/x-xz";
+    if (extension == "bin") return "application/octet-stream";
+    if (extension == "iso") return "application/octet-stream";
+    if (extension == "dmg") return "application/octet-stream";
+    if (extension == "txt") return "text/plain";
+    if (extension == "rtf") return "text/rtf";
+    if (extension == "md") return "text/markdown";
+    if (extension == "csv") return "text/csv";
+    if (extension == "ics") return "text/calendar";
+    if (extension == "yml") return "text/yaml";
+    if (extension == "yaml") return "text/yaml";
+    if (extension == "php") return "text/x-php";
+    if (extension == "c") return "text/x-c";
+    if (extension == "cpp") return "text/x-c";
+    if (extension == "h") return "text/x-c";
+    if (extension == "hpp") return "text/x-c";
+    if (extension == "java") return "text/x-java-source";
+    if (extension == "py") return "text/x-python";
+    if (extension == "sh") return "text/x-shellscript";
+    if (extension == "bat") return "text/x-shellscript";
+    if (extension == "rb") return "text/x-ruby";
+    if (extension == "swift") return "text/x-swift";
+    if (extension == "go") return "text/x-go";
+    if (extension == "pl") return "text/x-perl";
+    if (extension == "sql") return "text/x-sql";
+    if (extension == "lua") return "text/x-lua";
+    if (extension == "diff") return "text/x-diff";
+    if (extension == "patch") return "text/x-diff";
+    if (extension == "conf") return "text/x-config";
+    if (extension == "ini") return "text/x-ini";
+    if (extension == "log") return "text/x-log";
+    if (extension == "rtx") return "text/richtext";
+    if (extension == "tsv") return "text/tab-separated-values";
+    if (extension == "jad") return "text/vnd.sun.j2me.app-descriptor";
+    if (extension == "wml") return "text/vnd.wap.wml";
+    if (extension == "wmls") return "text/vnd.wap.wmlscript";
+    if (extension == "vtt") return "text/vtt";
+    if (extension == "htc") return "text/x-component";
+    if (extension == "f4v") return "video/x-f4v";
+    if (extension == "flv") return "video/x-flv";
+    if (extension == "m4v") return "video/x-m4v";
+    if (extension == "mkv") return "video/x-matroska";
+    if (extension == "mov") return "video/quicktime";
+    if (extension == "mp2") return "video/mpeg";
+    if (extension == "mpg") return "video/mpeg";
+    if (extension == "mpeg") return "video/mpeg";
+    if (extension == "mpe") return "video/mpeg";
+    if (extension == "m2v") return "video/mpeg";
+    if (extension == "m4v") return "video/mpeg";
+    if (extension == "3gp") return "video/3gpp";
+    if (extension == "3g2") return "video/3gpp2";
+    if (extension == "asf") return "video/x-ms-asf";
+    if (extension == "asx") return "video/x-ms-asf";
+    return "application/octet-stream";
 }
-
-/*
- * Sets default request handler.
- *
- * @param callback The function to call when a request is made.
- */
-void Link::Default(std::function<void(Request*, Response*)> callback) {
-  this->defaultHandler = callback;
-}
-
-/*
- * Set handler for a post request.
- *
- * @param path The specific path for the handler.
- * @param callback The function to call when a post request is made.
- */
-void Link::Post(std::string path, std::function<void(Request*, Response*)> callback) {
-  this->handlers[path+"POST"] = callback;
-}
-
-/*
- * Set handler for a put request.
- *
- * @param path The specific path for the handler.
- * @param callback The function to call when a put request is made.
- */
-void Link::Put(std::string path, std::function<void(Request*, Response*)> callback) {
-  this->handlers[path+"PUT"] = callback;
-}
-
-/*
- * Set handler for a delete request.
- *
- * @param path The specific path for the handler.
- * @param callback The function to call when a delete request is made.
- */
-void Link::Delete(std::string path, std::function<void(Request*, Response*)> callback) {
-  this->handlers[path+"DELETE"] = callback;
-}
-
-/*
- * Set handler for an error.
- *
- * @param code The error code.
- * @param callback The function to call when an error is made.
- */
-void Link::Error(int code, std::function<void(Request*, Response*)> callback) {
-  this->errorHandlers[code] = callback;
-}
-
-std::vector<std::string> split(std::string data, std::string delimiter) {
-  std::vector<std::string> result;
-  size_t pos = 0;
-  std::string token;
-  while ((pos = data.find(delimiter)) != std::string::npos) {
-    token = data.substr(0, pos);
-    if (token != "") result.push_back(token);
-    data.erase(0, pos + delimiter.length());
-  }
-  if (data != "") result.push_back(data);
-  return result;
-}
-
-/*
- * Binds and listens on specified port
- *
- * @return the error code.
- */
-int Link::Start() {
-  this->sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (this->sock == 0) return 1;
-  int opt = 1;
-  if (setsockopt(this->sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) return 2;
-  int time = 7200, interval = 60, retry = 3;
-  struct sockaddr_in addr;
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(this->port);
-  if (bind(this->sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) return 3;
-  if (listen(this->sock, 50) < 0) return 4;
-  while (true) {
-    char buffer[1024] = {0};
-    struct sockaddr_in addr;
-    socklen_t addrSize = sizeof(addr);
-    int sock = accept(this->sock, (struct sockaddr*)&addr, &addrSize);
-    recv(sock, buffer, 1024, 0);
-    std::string bufferStr = buffer, line, path, method, protocol;
-    std::map<std::string, std::string> queriesMap;
-    std::istringstream stream(decodeHTTP(bufferStr));
-    getline(stream, line);
-    if (line.substr(0, 3) == "GET" || line.substr(0, 4) == "POST" || line.substr(0, 3) == "PUT" || line.substr(0, 6) == "DELETE") {
-      method = line.substr(0, 3) == "GET" ? "GET" : line.substr(0, 4) == "POST" ? "POST" : line.substr(0, 3) == "PUT"? "PUT" : "DELETE";
-      path = line.substr(method.length()+1);
-      path = path.substr(0, path.length()-(path.substr(path.find_last_of("HTTP/")-5)).length());
-      protocol = "1.1";
-    } else {
-      close(sock);
-      continue;
-    }
-    if (path.find("?") != std::string::npos) {
-      std::string queries = path.substr(path.find_last_of("?")+1);
-      path = path.substr(0, path.find_last_of("?"));
-      std::istringstream stream(queries);
-      std::string query;
-      while(getline(stream, query, '&')) {
-        std::string key = query.substr(0, query.find_first_of("="));
-        std::string value = query.substr(query.find_first_of("=")+1);
-        queriesMap[key] = sanitize(value);
-      }
-      std::string newPath = "";
-      for (int i=0; i<path.length(); i++) if (path.substr(i, 2) != "//") newPath += path[i];
-      path = newPath[newPath.length()-1]=='/' ? newPath.substr(0, newPath.length()-1) : newPath;
-    }
-
-    bool isHandled = false;
-
-    for (auto handler: this->handlers) {
-      /*
-       * So basically here I had a mild stroke and decided to use my maniacal logic to create a variable system
-       * It just splits the path by / and the handler path by / and if one of the parts of the path starts with { it will replace that part of the handler path with that part of the path
-       * And at the end if they are the same it will call that handler, if not it will find another handler or commit die
-       * If the path has a * it will just check if the handler path starts with the path before the * and if it does it will call that handler
-       * and at the end if the path is just not the same it'll just find another handler or commit die
-       * 
-       * - FiRe
-       */
-      std::string key = handler.first;
-      if (key.length() < method.length()) continue;
-      std::string handlerPath = key.substr(0, key.length()-method.length());
-      if (key.substr(key.length()-method.length()) != method) continue;
-      std::vector<std::string> handlerPathBySlash = split(handlerPath, "/");
-      std::vector<std::string> pathBySlash = split(path, "/");
-      if (handlerPathBySlash.size() != pathBySlash.size()) continue;
-      for (int i=0; i<handlerPathBySlash.size(); i++) {
-        if (handlerPathBySlash[i].substr(0, 1) == "{" && handlerPathBySlash[i].substr(handlerPathBySlash[i].length()-1) == "}") {
-          queriesMap[handlerPathBySlash[i].substr(1, handlerPathBySlash[i].length()-2)] = pathBySlash[i];
-          handlerPathBySlash[i] = pathBySlash[i];
-        }
-      }
-      bool matches = true;
-      if (handlerPathBySlash != pathBySlash) matches = false;
-      if (handlerPath.find("*") != std::string::npos) {
-        std::string wild = handlerPath.substr(0, handlerPath.find("*"));
-        if (path.substr(0, wild.length()) != wild) continue;
-      } else if (handlerPath != path && !matches) continue;
-      Request request(sock, &addr, protocol, path, method, buffer, queriesMap);
-      ThreadInfo* info = new ThreadInfo();
-      info->func = handler.second;
-      info->request = &request;
-      info->errorHandlers = this->errorHandlers;
-      isHandled = true;
-      pthread_t thread;
-      pthread_create(&thread, NULL, threadWrapper, info);
-      pthread_join(thread, NULL);
-      break;
-    }
-
-    if (!isHandled && this->defaultHandler != nullptr) {
-      ThreadInfo* info = new ThreadInfo();
-      info->func = this->defaultHandler;
-      Request request(sock, &addr, protocol, path, method, buffer, queriesMap);
-      info->request = &request;
-      info->errorHandlers = this->errorHandlers;
-      pthread_t thread;
-      pthread_create(&thread, NULL, threadWrapper, info);
-      pthread_join(thread, NULL);
-    }
-    
-    if (defaultHandler == nullptr) {
-      close(sock);
-      shutdown(this->sock, SHUT_RDWR);
-      return 5;
-    }
-  }
-  return 0;
-}
-
-/*
- * Shuts down the server
- *
- * @return the error code.
- */
-int Link::Stop() {
-  return shutdown(this->sock, SHUT_RDWR);
-  return 0;
-}
-
-/*
- * @return the port number
- */
-int Link::GetPort() { return this->port; }

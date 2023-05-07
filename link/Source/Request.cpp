@@ -1,124 +1,254 @@
-/* 
- *  ______________________________________
- * |  _   _  _  _                         |
- * | | \ | |/ |/ |     Date: 06/24/2022   |
- * | |  \| |- |- |     Author: Levi Hicks |
- * | |     || || |                        |
- * | | |\  || || |                        |
- * | |_| \_||_||_|     File: Request.cpp  |
- * |                                      |
- * |                                      |
- * | Please do not remove this header.    |
- * |______________________________________|
- */
-
+#include <Link.hpp>
 #include <iostream>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <filesystem>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string>
 #include <sstream>
-#include <fstream>
-#include <map>
-#include <stdexcept>
-#include <iomanip>
-#include <cstring>
-#include <chrono>
-#include <vector>
-#include <algorithm>
-#include "../Includes/Link/Request.hpp"
-#include "../Includes/Link/HTTPTools.hpp"
 
-Request::Request(int sock, sockaddr_in* addr, std::string protocol, std::string path, std::string method, std::string request, std::map<std::string, std::string> queries) {
-  this->sock = sock;
-  this->addr = addr;
-  this->path = path;
-  this->method = method;
-  this->request = request;
-  this->queries = queries;
-  this->protocol = protocol;
-  {
-    std::string header;
-    std::istringstream stream(decodeHTTP(request));
-    while(getline(stream, header)) {
-      if (header.find(":") != std::string::npos && header.find_first_of(":")+2 < header.length()) {
-        std::string key = header.substr(0, header.find_first_of(":"));
-        std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
-        std::string value = header.substr(header.find_first_of(":")+2);
-        this->headers[key] = sanitize(value);
-      } else if (header.substr(0, 3) == "GET" || header.substr(0, 4) == "POST" || header.substr(0, 3) == "PUT" || header.substr(0, 6) == "DELETE") {}
-      else this->body += header + "\n";
+Link::Request::Request(std::string headers, std::string body) {
+    std::string line;
+    std::stringstream stream(headers);
+    std::map<std::string, std::string> headerMap;
+    int i = 0;
+    std::string path;
+    while (std::getline(stream, line)) {
+        if (i == 0) {
+            path = line.substr(line.find(" ") + 1);
+            path = path.substr(0, path.find(" "));
+        } else {
+            std::string val = line.substr(line.find(": ") + 2);
+            headerMap[line.substr(0, line.find(": "))] = val.substr(0, val.length()-1);
+        }
+        i++;
     }
-  }
-  if (this->headers["connection"] == "keep-alive") {
-    int time = 7200, interval = 60, retry = 3, opt = 1;
-    if (setsockopt(this->sock, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) < 0 || setsockopt(this->sock, IPPROTO_TCP, TCP_KEEPIDLE, &time, sizeof(time)) < 0 || 
-        setsockopt(this->sock, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval)) < 0 || setsockopt(this->sock, IPPROTO_TCP, TCP_KEEPCNT, &retry, sizeof(retry)) < 0) {
-      close(this->sock);
+    this->SetURL("http://"+headerMap["Host"]+path);
+    this->SetHeadersRaw(headers)->SetBody(body);
+    this->SetRawHeader("Host", headerMap["Host"]);
+}
+
+std::string decodeHTTP(std::string &src) {
+    std::replace(src.begin(), src.end(), '+', ' ');
+    std::string ret;
+    char ch;
+    int i, ii;
+    for (i=0;i<src.length();i++) {
+        if (int(src[i])=='%') {
+            switch (src[i+1]) {
+                case '0'...'9':
+                case 'a'...'f':
+                case 'A'...'F':
+                    break;
+                default:
+                    ret += '%';
+                    continue;
+            }
+            sscanf(src.substr(i+1,2).c_str(), "%x", &ii);
+            ch=static_cast<char>(ii);
+            ret+=ch;
+            i=i+2;
+        } else ret+=src[i];
     }
-  }
-  if (this->body.size()>0) this->body = this->body.substr(2, this->body.length()-3);
-  if (this->method == "POST" && headers["content-type"].find("application/x-www-form-urlencoded") != std::string::npos) {
-    std::string parameter;
-    std::vector<std::string> arr;
-    size_t pos = 0;
-    std::string token;
-    while ((pos = body.find("&")) != std::string::npos) {
-      token = body.substr(0, pos);
-      if (token != "") arr.push_back(token);
-      body.erase(0, pos + 1);
+    return (ret);
+}
+
+std::map<std::string, std::string> Link::Request::GetParams() {
+    return this->params;
+}
+
+Link::Request* Link::Request::SetHeadersRaw(std::string headersRaw) {
+    std::string line;
+    std::stringstream stream(headersRaw);
+    int i = 0;
+    while (std::getline(stream, line)) {
+        if (i == 0) {
+            this->SetMethod(line.substr(0, line.find(" ")));
+            this->SetVersion(line.substr(line.find("HTTP/") + 5));
+            std::string path = line.substr(line.find(" ") + 1);
+            this->SetPath(path.substr(0, path.find(" ")));
+        } else {
+            this->SetRawHeader(line.substr(0, line.find(": ")), line.substr(line.find(": ") + 2, line.find("\r")));
+        }
+        i++;
     }
-    if (body != "") arr.push_back(body);
-    for (std::string parameter : arr) {
-      std::string key = parameter.substr(0, parameter.find_first_of("="));
-      std::string value = parameter.substr(parameter.find_first_of("=")+1);
-      this->params[key] = sanitize(value);
+    if (this->path.find("?") != std::string::npos) {
+        std::string queries = this->path.substr(this->path.find("?") + 1);
+        std::stringstream stream(queries);
+        while (std::getline(stream, line, '&')) {
+            std::string key = line.substr(0, line.find("="));
+            std::string value = line.substr(line.find("=") + 1);
+            this->SetParam(decodeHTTP(key), decodeHTTP(value));
+        }
+        SetPath(this->path.substr(0, this->path.find("?")));
     }
-  }
+    if (this->GetHeader("Cookie") != "") {
+        std::string cookies = this->GetHeader("Cookie");
+        std::stringstream stream(cookies);
+        while (std::getline(stream, line, ';')) {
+            std::string key = line.substr(0, line.find("="));
+            if (key[0] == ' ') key = key.substr(1);
+            std::string value = line.substr(line.find("=") + 1);
+            this->SetCookie(decodeHTTP(key), decodeHTTP(value));
+        }
+    }
+    return this;
 }
 
-std::string Request::GetProtocolVersion() {
-  return this->protocol;
+Link::Request::Request(std::string url) {
+    this->version = "1.1";
+    this->port = 0;
+    this->SetURL(url)->SetMethod("GET");
 }
 
-std::string Request::GetPath() {
-  return this->path;
+Link::Request* Link::Request::SetURL(std::string url) {
+    this->url = url;
+    this->protocol = url.substr(0, url.find("://"));
+    this->domain = url.substr(url.find("://") + 3);
+    this->domain = this->domain.substr(0, this->domain.find("/"));
+    if (port == 0 && this->domain.find(":") == std::string::npos) {
+        this->SetPort(this->protocol == "https"?443:80);
+    } else if (port == 0) {
+        this->SetPort(std::stoi(this->domain.substr(this->domain.find(":") + 1)));
+        this->domain = this->domain.substr(0, this->domain.find(":"));
+    }
+    this->path = url.substr(url.find("://") + 3);
+    this->path = this->path.substr(this->path.find("/"));
+    this->headers["Host"] = domain + (port == 80?"":":" + std::to_string(port));
+    return this;
 }
 
-int Request::GetSocket() {
-  return this->sock;
+Link::Request* Link::Request::SetPort(int d) {
+    this->port = d;
+    return this;
 }
 
-std::string Request::GetMethod() {
-  return this->method;
+int Link::Request::GetPort() {
+    return port;
 }
 
-std::string Request::GetRequest() {
-  return this->request;
+Link::Request* Link::Request::SetMethod(std::string method) {
+    this->method = method;
+    return this;
 }
 
-std::string Request::GetHeader(std::string header) {
-  return this->headers[header];
+Link::Request* Link::Request::SetHeader(std::string key, std::string value) {
+    std::string lower = key;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    this->headers[lower] = value;
+    return this;
 }
 
-std::string Request::GetQuery(std::string query) {
-  return this->queries[query];
+Link::Request* Link::Request::SetCookie(std::string key, std::string value) {
+    this->cookies[key] = value;
+    return this;
 }
 
-std::string Request::GetBody() {
-  return this->body;
+Link::Request* Link::Request::SetParam(std::string key, std::string value) {
+    this->params[key] = value;
+    return this;
 }
 
-std::string Request::GetFormParam(std::string param) {
-  return this->params[param];
+Link::Request* Link::Request::SetBody(std::string body) {
+    this->body = body;
+    return this;
 }
 
-struct sockaddr_in* Request::GetAddress() {
-  return this->addr;
+Link::Request* Link::Request::SetPath(std::string path) {
+    if (path[0] != '/') path = "/" + path;
+    path = decodeHTTP(path);
+    this->SetURL(this->protocol + "://" + this->domain + path);
+    return this;
+}
+
+Link::Request* Link::Request::SetProtocol(std::string protocol) {
+    this->SetURL(protocol + "://" + this->domain + this->path);
+    return this;
+}
+
+Link::Request* Link::Request::SetDomain(std::string domain) {
+    this->SetURL(this->protocol + "://" + domain + this->path);
+    return this;
+}
+
+std::string Link::Request::GetPath() {
+    return this->path;
+}
+
+std::string Link::Request::GetProtocol() {
+    return this->protocol;
+}
+
+std::string Link::Request::GetDomain() {
+    return this->domain;
+}
+
+std::string Link::Request::GetURL() {
+    return this->url;
+}
+
+std::string Link::Request::GetMethod() {
+    return this->method;
+}
+
+std::string Link::Request::GetHeader(std::string key) {
+    std::string lower = key;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    return this->headers[lower];
+}
+
+std::string Link::Request::GetRawHeader(std::string key) {
+    return key + ": " + this->headers[key];
+}
+
+Link::Request* Link::Request::SetRawHeader(std::string key, std::string value) {
+    this->headers[key] = value;
+    return this;
+}
+
+std::string Link::Request::GetCookie(std::string key) {
+    return this->cookies[key];
+}
+
+std::string Link::Request::GetParam(std::string key) {
+    return this->params[key];
+}
+
+std::string Link::Request::GetBody() {
+    return this->body;
+}
+
+std::string Link::Request::GetRawHeaders() {
+    std::string headers = this->GetMethod() + " " + this->GetURL()
+                .substr(this->GetURL().find(this->domain)+this->domain.length() + 
+                (this->port == 80 || this->port == 443?0:std::to_string(this->port).length() + 1))
+                + " HTTP/" + this->GetVersion() + "\r\n";
+    for (auto const& x : this->headers) {
+        if (x.second != "") headers += x.first + ": " + x.second + "\r\n";
+    }
+    return headers;
+}
+
+std::string Link::Request::GetRawParams() {
+    std::string res = "";
+    res += this->method + " " + this->path + " " + this->version + "\r\n";
+    for (auto it = this->params.begin(); it != this->params.end(); it++) res += it->first + "=" + it->second + "&";
+    return res.substr(0, res.length() - 1);
+}
+
+std::string Link::Request::GetRawBody() {
+    return this->body;
+}
+
+std::string Link::Request::GetVersion() {
+    return this->version;
+}
+
+Link::Request* Link::Request::SetVersion(std::string version) {
+    this->version = version;
+    return this;
+}
+
+Link::Request* Link::Request::SetIP(std::string ip) {
+    this->ip = ip;
+    return this;
+}
+
+std::string Link::Request::GetIP() {
+    return this->ip;
 }

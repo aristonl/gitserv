@@ -1,26 +1,47 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20.2)
+project(Link)
 
-project(link VERSION 1.0.1 LANGUAGES C CXX)
+find_package(OpenSSL 3 REQUIRED)
 
-include_directories(Includes)
+# Versioning
+set(LINK_VERSION 2)
+set(LINK_VERSION_MINOR 0)
+set(LINK_VERSION_PATCH 0)
+set(LINK_VERSION_EXTRA "devel")
 
-set(INSTALL_LIBDIR /usr/lib)
-set(INSTALL_INCLUDEDIR /usr/include)
+set(VERSION ${LINK_VERSION}.${LINK_VERSION_MINOR}.${LINK_VERSION_PATCH}-${LINK_VERSION_EXTRA})
 
-file(GLOB_RECURSE CPPSourceCode Source/*.cpp)
-file(GLOB_RECURSE Headers Includes/*.h)
+# Library
+file(GLOB_RECURSE SOURCES Source/*.cpp)
+file(GLOB_RECURSE INCLUDES Include/*)
 
-set(CMAKE_CXX_FLAGS "-fpic -pthread")
-add_link_options(-pthread)
-ADD_LIBRARY(link SHARED ${CPPSourceCode} ${Headers})
+include_directories(Include)
 
-set_target_properties(link PROPERTIES PUBLIC_HEADER "${Headers}")
+add_library(link SHARED ${SOURCES})
+set_target_properties(link PROPERTIES
+    PUBLIC_HEADER ${INCLUDES})
 
 set_target_properties(link PROPERTIES
-		VERSION ${PROJECT_VERSION}
-		SOVERSION ${PROJECT_VERSION_MAJOR})
+		VERSION ${VERSION}
+		SOVERSION ${LINK_VERSION})
 
-# Add install target
+target_compile_features(link PUBLIC cxx_std_17)
+set (CMAKE_CXX_FLAGS "-std=c++17")
+
+target_include_directories(link PUBLIC Include)
+target_link_libraries(link PUBLIC OpenSSL::SSL z)
+
+# install
 install(TARGETS link
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+
+# Test
+file(GLOB_RECURSE TEST_SOURCES Test/*.cpp)
+
+add_executable(linktest ${TEST_SOURCES})
+target_link_libraries(linktest PRIVATE link)
+
+enable_testing()
+
+add_test(NAME test COMMAND $<TARGET_FILE:linktest>)

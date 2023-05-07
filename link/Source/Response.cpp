@@ -1,159 +1,164 @@
-/* 
- *  ______________________________________
- * |  _   _  _  _                         |
- * | | \ | |/ |/ |     Date: 06/25/2022   |
- * | |  \| |- |- |     Author: Levi Hicks |
- * | |     || || |                        |
- * | | |\  || || |                        |
- * | |_| \_||_||_|     File: Response.cpp |
- * |                                      |
- * |                                      |
- * | Please do not remove this header.    |
- * |______________________________________|
- */
-
+#include <Link.hpp>
 #include <iostream>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <filesystem>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string>
 #include <sstream>
-#include <fstream>
-#include <map>
-#include <stdexcept>
-#include <iomanip>
-#include <cstring>
-#include <chrono>
-#include <vector>
-#include <functional>
-#include "../Includes/Link/Response.hpp"
+#include <zlib.h>
 
-/*
- * Create a new Response object.
- */
-Response::Response(Request* request, std::map<int, std::function<void(Request*, Response*)>>* errorHandlers) {
-  this->cancelled = false;
-  this->http = "";
-  this->request = request;
-  this->errorHandlers = errorHandlers;
+Link::Response::Response() {
+    this->SetHeadersRaw("HTTP/1.1 200 OK\r\n")->SetBody("");
+    this->SetInstanceType("Server");
+    this->closed = false;
 }
 
-/*
- * Check if the Response has been cancelled.
- */
-bool Response::IsCancelled() {
-  return this->cancelled;
+Link::Response::Response(std::string header, std::string body) {
+    this->SetHeadersRaw(header);
+    this->SetBody(body);
+    this->SetInstanceType("Client");
+    this->closed = false;
 }
 
-/*
- * Set the Response to be cancelled.
- */
-void Response::SetCancelled(bool cancelled) {
-  this->cancelled = cancelled;
+Link::Response* Link::Response::SetInstanceType(std::string type) {
+    this->instanceType = type;
+    return this;
 }
 
-/*
- * Gets the HTTP response.
- */
-std::string Response::GetHTTP() {
-  return this->http;
+bool Link::Response::InstanceOf(std::string type) {
+    return this->instanceType == type;
 }
 
-/*
- * Sets the HTTP response.
- */
-void Response::SetHTTP(std::string http) {
-  this->http = http;
+Link::Response* Link::Response::Close() {
+    this->closed = true;
+    return this;
 }
 
-/*
- * Sends the HTTP response with the given body.
- */
-void Response::Send(std::string body) {
-  http = "HTTP/"+this->request->GetProtocolVersion()+" " + status + "\n";
-  if (headers.size() > 0) for (std::_Rb_tree_iterator<std::pair<const std::string, std::string>> it = headers.begin(); it != headers.end(); it++) http += it->first + ": " + it->second + "\n";
-  http += "\n" + body;
+bool Link::Response::isClosed() {
+    return this->closed;
 }
 
-/*
- * Sends a file to the client.
- *
- * @param file The file path to send.
- */
-void Response::SendFile(std::string path) {
-  std::ifstream file(path);
-  if (!file.is_open()||!file.good()) {
-    this->Error(404);
-    return;
-  }
-  std::stringstream buffer;
-  buffer << file.rdbuf();
-  std::string body = buffer.str();
-  http = "HTTP/"+this->request->GetProtocolVersion()+" " + status + "\n";
-  if (headers.size() > 0) for (std::_Rb_tree_iterator<std::pair<const std::string, std::string>> it = headers.begin(); it != headers.end(); it++) http += it->first + ": " + it->second + "\n";
-  http += "\n"+body;
+Link::Response* Link::Response::SetHeader(std::string key, std::string value) {
+    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    this->headers[key] = value;
+    return this;
 }
 
-/*
- * Set a specific custom header.
- *
- * @param header The header to set
- * @param value The value to set the header to
- */
-void Response::SetHeader(std::string header, std::string value) {
-  this->headers[header] = value;
+std::string decompress(std::string data) {
+    z_stream strm;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = data.size();
+    strm.next_in = (Bytef*)data.data();
+    inflateInit2(&strm, 16 + MAX_WBITS);
+    char outbuffer[32768];
+    std::string outstring;
+    do {
+        strm.avail_out = 32768;
+        strm.next_out = (Bytef*)outbuffer;
+        inflate(&strm, Z_NO_FLUSH);
+        if (outstring.size() < strm.total_out) {
+            outstring.append(outbuffer, strm.total_out - outstring.size());
+        }
+    } while (strm.avail_out == 0);
+    inflateEnd(&strm);
+    return outstring;
 }
 
-/*
- * Get a specific custom header.
- *
- * @param header The header to get
- * @return The value of the header
- */
-std::string Response::GetHeader(std::string header) {
-  return this->headers[header];
+std::string deflate(std::string data) {
+    z_stream strm;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = data.size();
+    strm.next_in = (Bytef*)data.data();
+    deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 16 + MAX_WBITS, 8, Z_DEFAULT_STRATEGY);
+    char outbuffer[32768];
+    std::string outstring;
+    do {
+        strm.avail_out = 32768;
+        strm.next_out = (Bytef*)outbuffer;
+        deflate(&strm, Z_FINISH);
+        if (outstring.size() < strm.total_out) {
+            outstring.append(outbuffer, strm.total_out - outstring.size());
+        }
+    } while (strm.avail_out == 0);
+    deflateEnd(&strm);
+    return outstring;
 }
 
-/*
- * Remove a specific custom header.
- *
- * @param header The header to remove
- */
-void Response::RemoveHeader(std::string header) {
-  this->headers.erase(header);
+Link::Response* Link::Response::SetBody(std::string body) {
+    this->SetHeader("Content-Length", std::to_string(body.size()));
+    this->SetHeader("Transfer-Encoding", "");
+    this->body = body;
+    if (this->InstanceOf("Server")) {
+        this->SetHeader("Content-Encoding", "");
+        return this;
+    }
+    if (this->GetHeader("Content-Encoding") == "gzip") {
+        this->body = decompress(body);
+        return this;
+    }
+    if (this->GetHeader("Content-Encoding") == "deflate") {
+        this->body = deflate(body);
+        return this;
+    }
+    return this;
 }
 
-/*
-* Set the status of the response.
-*
-* @param status The status to set
-*/
-void Response::SetStatus(std::string status) {
-  this->status = status;
+Link::Response* Link::Response::SetRawHeader(std::string key, std::string value) {
+    this->headers[key] = value;
+    return this;
 }
 
-/*
- * Get the status of the response.
- *
- * @return The status of the response
- */
-std::string Response::GetStatus() {
-  return this->status;
+Link::Response* Link::Response::SetHeadersRaw(std::string headersRaw) {
+    this->headersRaw = headersRaw;
+    std::string line = headersRaw.substr(0, headersRaw.find("\r\n"));
+    this->version = line.substr(0, line.find(" "));
+    line = line.substr(line.find(" ") + 1);
+    this->status = std::stoi(line);
+    
+    std::istringstream iss(headersRaw.substr(headersRaw.find("\r\n") + 2));
+    std::string l;
+    while (std::getline(iss, l)) {
+        if (l == "") break;
+        std::string key = l.substr(0, l.find(":"));
+        std::string value = l.substr(l.find(":") + 2);
+        value = value.substr(0, value.find("\r"));
+        this->SetHeader(key, value);
+    }
+    return this;
 }
 
-/*
- * Sends an error response to the client.
- *
- * @param code The error code to send
- */
-void Response::Error(int code) {
-  if (this->errorHandlers->find(code) != this->errorHandlers->end()) {
-    this->errorHandlers->at(code)(this->request, this);
-  }
+Link::Response* Link::Response::SetStatus(int status) {
+    this->status = status;
+    return this;
+}
+
+Link::Response* Link::Response::SetVersion(std::string version) {
+    this->version = version;
+    return this;
+}
+
+std::string Link::Response::GetHeader(std::string key) {
+    std::string lower = key;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    return this->headers[lower];
+}
+
+std::string Link::Response::GetBody() {
+    return this->body;
+}
+
+std::string Link::Response::GetHeadersRaw() {
+    std::string headers = this->version + " " + std::to_string(this->status) + " " + Link::Status(this->status) + "\r\n";
+    for (auto const& x : this->headers) {
+        if (x.second != "") headers += x.first + ": " + x.second + "\r\n";
+    }
+    return headers;
+}
+
+std::string Link::Response::GetVersion() {
+    return this->version;
+}
+
+int Link::Response::GetStatus() {
+    return this->status;
 }
