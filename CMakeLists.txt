@@ -13,8 +13,6 @@ include(FeatureSummary)
 
 feature_summary(WHAT ALL)
 
-add_subdirectory(libgit2)
-
 set(cpp_src src/main.cpp
 			src/init.cpp
 			src/setup.cpp
