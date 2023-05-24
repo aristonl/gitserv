@@ -1,0 +1,16 @@
+                        
+			gitserv - git front-end solution
+            Copyright (c) 2023 Ariston Lorenzo. All rights reserved.
+
+  This software is open-source software; you can modify it and/or distribute
+  it under the terms of the BSD 3-Clause License (Modified BSD License) as
+  published with the distribution of this software in the file COPYRIGHT.
+
+  This program is distributed WITHOUT ANY WARRANTY; without even the implied
+  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+-------------------------------------------------------------------------------
+
+gitserv is a Git server software package that can help you easily set up a new
+Git server with SSH and HTTPS support. It also includes a web and ssh frontend.
+
