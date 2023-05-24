@@ -6,19 +6,10 @@ project(gitserv C CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
 # ---- Modules ----
-include(findLink)
+find_library(LINK_LIBRARY NAMES link)
 include(FeatureSummary)
 
 # ---- Build options ----
-if (LINK_FOUND)
-	option(GITSERV_WEB "Build gitserv's web frontend using Link" ON)
-	add_subdirectory(link)
-	add_definitions(-DGITSERV_WEB)
-	add_feature_info(GITSERV_WEB GITSERV_WEB "Build gitserv's web frontend using Link")
-else()
-	message(WARNING "Link not found, disabling web frontend")
-	option(GITSERV_WEB "Build gitserv's web frontend using Link" OFF)
-endif()
 
 feature_summary(WHAT ALL)
 
@@ -35,4 +26,8 @@ add_executable(gitserv ${cpp_src})
 set(CMAKE_CXX_FLAGS "-fpic -pthread")
 add_link_options(-pthread)
 
-target_link_libraries(gitserv git2 link)
+if (LINK_LIBRARY)
+	target_link_libraries(gitserv ${LINK_LIBRARY} git2)
+else()
+	message(FATAL_ERROR "link library not found")
+endif()
